@@ -1,6 +1,8 @@
 # repowiki
 
-Auto-generate [Qoder](https://qoder.com) repo wiki on every git commit.
+Auto-generate repo wiki on every git commit using AI.
+
+Supports **[Qoder CLI](https://qoder.com/cli)**, **[Claude Code](https://claude.ai/claude-code)**, and **[OpenAI Codex CLI](https://github.com/openai/codex)**.
 
 Inspired by [Entire CLI](https://entire.io) — but instead of capturing AI sessions, repowiki keeps your project documentation in sync with your code automatically.
 
@@ -10,7 +12,7 @@ Every time you `git commit`, repowiki:
 
 1. Detects which files changed
 2. Determines which wiki sections are affected
-3. Runs [Qoder CLI](https://qoder.com/cli) in the background to update documentation
+3. Runs your chosen AI engine in the background to update documentation
 4. Auto-commits the updated wiki as a separate `[repowiki]` commit
 
 You write code. Documentation writes itself.
@@ -24,12 +26,19 @@ aeaf37f [repowiki] full wiki generation               # auto-generated
 0ed5fe3 initial: repowiki v0.1.0 CLI tool             # your commit
 ```
 
+## Supported Engines
+
+| Engine | CLI | Install |
+|--------|-----|---------|
+| **Qoder** (default) | `qodercli` | [qoder.com](https://qoder.com) |
+| **Claude Code** | `claude` | [claude.ai/claude-code](https://claude.ai/claude-code) |
+| **OpenAI Codex** | `codex` | [github.com/openai/codex](https://github.com/openai/codex) |
+
 ## Requirements
 
 - **Go 1.22+** (for building from source)
 - **Git** repository with at least one commit
-- **Qoder** IDE or CLI installed — [qoder.com](https://qoder.com)
-- **Qoder account** — free or Pro (needed for `qodercli` authentication)
+- **One of the supported AI engines** installed and authenticated
 
 ## Installation
 
@@ -56,31 +65,34 @@ make install
 
 ## Quick Start
 
-### 1. Authenticate Qoder CLI (one time)
+### 1. Authenticate your AI engine (one time)
 
 ```bash
+# Qoder
 qodercli /login
+# or: export QODER_PERSONAL_ACCESS_TOKEN=<token>
+
+# Claude Code
+claude  # follow the auth prompts
+
+# Codex
+codex  # follow the auth prompts
+# or: export CODEX_API_KEY=<key>
 ```
-
-If `qodercli` is not on PATH (common on macOS), use the full path:
-
-```bash
-/Applications/Qoder.app/Contents/Resources/app/resources/bin/aarch64_darwin/qodercli /login
-```
-
-Or set a token:
-
-```bash
-export QODER_PERSONAL_ACCESS_TOKEN=<your-token>
-```
-
-Get your token at [qoder.com/account/integrations](https://qoder.com/account/integrations).
 
 ### 2. Enable in your project
 
 ```bash
 cd /path/to/your/project
+
+# With Qoder (default)
 repowiki enable
+
+# With Claude Code
+repowiki enable --engine claude-code
+
+# With OpenAI Codex
+repowiki enable --engine codex
 ```
 
 This creates:
@@ -116,9 +128,11 @@ repowiki version     # Show version
 
 ```bash
 # enable
+repowiki enable --engine claude-code       # Use Claude Code
+repowiki enable --engine codex             # Use OpenAI Codex
+repowiki enable --engine-path /path/to/bin # Custom binary path
+repowiki enable --model sonnet             # Engine-specific model
 repowiki enable --force                    # Reinstall hook
-repowiki enable --qodercli-path /path/to   # Custom qodercli path
-repowiki enable --model performance        # Qoder model level
 repowiki enable --no-auto-commit           # Generate but don't auto-commit
 
 # update
@@ -162,8 +176,9 @@ Config is stored in `.repowiki/config.json` (auto-created by `enable`):
 ```json
 {
   "enabled": true,
-  "qodercli_path": "qodercli",
-  "model": "auto",
+  "engine": "qoder",
+  "engine_path": "",
+  "model": "",
   "max_turns": 50,
   "language": "en",
   "auto_commit": true,
@@ -176,8 +191,9 @@ Config is stored in `.repowiki/config.json` (auto-created by `enable`):
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `qodercli_path` | `"qodercli"` | Path to qodercli binary. Auto-detected on macOS. |
-| `model` | `"auto"` | Qoder model: `auto`, `efficient`, `performance`, `ultimate` |
+| `engine` | `"qoder"` | AI engine: `qoder`, `claude-code`, `codex` |
+| `engine_path` | `""` | Override path to engine CLI binary (auto-detected if empty) |
+| `model` | `""` | Engine-specific model (e.g. `sonnet` for Claude, `performance` for Qoder) |
 | `max_turns` | `50` | Max agent iterations per generation |
 | `language` | `"en"` | Wiki language (`en`, `zh`) |
 | `auto_commit` | `true` | Auto-commit wiki changes after generation |
@@ -224,12 +240,12 @@ fi
 
 ## Troubleshooting
 
-### qodercli not found
+### Engine binary not found
 
-repowiki auto-detects qodercli from: config path → `$PATH` → known macOS locations. If detection fails:
+repowiki auto-detects engine binaries from: `engine_path` config → `$PATH` → known OS locations. If detection fails:
 
 ```bash
-repowiki enable --qodercli-path /path/to/qodercli
+repowiki enable --engine-path /path/to/binary
 ```
 
 ### Wiki not updating after commits

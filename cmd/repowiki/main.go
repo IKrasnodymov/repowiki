@@ -39,7 +39,9 @@ func main() {
 }
 
 func printUsage() {
-	fmt.Printf(`repowiki v%s — Auto-generate Qoder repo wiki on git commits
+	fmt.Printf(`repowiki v%s — Auto-generate repo wiki on git commits
+
+Supports multiple AI engines: Qoder CLI, Claude Code, OpenAI Codex CLI.
 
 Usage:
   repowiki <command> [flags]
@@ -50,12 +52,14 @@ Commands:
   status      Show current status and configuration
   generate    Run full wiki generation
   update      Run incremental wiki update for recent changes
+  logs        Show latest generation log
   version     Show version
 
 Flags for 'enable':
+  --engine            AI engine: qoder, claude-code, codex (default: qoder)
+  --engine-path       Path to engine CLI binary
+  --model             Model level (engine-specific)
   --force             Reinstall hook even if already present
-  --qodercli-path     Path to qodercli binary
-  --model             Qoder model level (auto, efficient, performance, ultimate)
   --no-auto-commit    Don't auto-commit wiki changes
 
 Flags for 'update':
@@ -63,10 +67,12 @@ Flags for 'update':
   --from-hook         Internal: indicates hook-triggered run
 
 Examples:
-  repowiki enable                    # Enable in current project
-  repowiki enable --force            # Reinstall hook
-  repowiki generate                  # Full wiki generation
-  repowiki update --commit abc123    # Update for specific commit
-  repowiki disable                   # Remove hook
+  repowiki enable                               # Enable with Qoder (default)
+  repowiki enable --engine claude-code           # Enable with Claude Code
+  repowiki enable --engine codex                 # Enable with OpenAI Codex
+  repowiki enable --engine claude-code --model sonnet  # With specific model
+  repowiki generate                              # Full wiki generation
+  repowiki status                                # Check status
+  repowiki disable                               # Remove hook
 `, Version)
 }

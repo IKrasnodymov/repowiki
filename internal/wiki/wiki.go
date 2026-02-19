@@ -21,13 +21,13 @@ func FullGenerate(gitRoot string, cfg *config.Config) error {
 
 	prompt := BuildFullGeneratePrompt(cfg)
 
-	output, err := runQoder(cfg, gitRoot, prompt)
+	output, err := RunEngine(cfg, gitRoot, prompt)
 	if err != nil {
-		logf(gitRoot, "qodercli failed: %v", err)
+		logf(gitRoot, "engine failed: %v", err)
 		return fmt.Errorf("wiki generation failed: %w", err)
 	}
 
-	logf(gitRoot, "qodercli completed, output length: %d", len(output))
+	logf(gitRoot, "engine completed, output length: %d", len(output))
 
 	if cfg.AutoCommit {
 		if err := CommitChanges(gitRoot, cfg, "full wiki generation"); err != nil {
@@ -54,13 +54,13 @@ func IncrementalUpdate(gitRoot string, cfg *config.Config, changedFiles []string
 
 	prompt := BuildIncrementalPrompt(cfg, changedFiles, affectedSections)
 
-	output, err := runQoder(cfg, gitRoot, prompt)
+	output, err := RunEngine(cfg, gitRoot, prompt)
 	if err != nil {
-		logf(gitRoot, "qodercli failed: %v", err)
+		logf(gitRoot, "engine failed: %v", err)
 		return fmt.Errorf("wiki update failed: %w", err)
 	}
 
-	logf(gitRoot, "qodercli completed, output length: %d", len(output))
+	logf(gitRoot, "engine completed, output length: %d", len(output))
 
 	if cfg.AutoCommit {
 		desc := fmt.Sprintf("update wiki for %d changed files", len(changedFiles))

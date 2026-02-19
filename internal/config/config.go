@@ -12,11 +12,16 @@ const (
 	ConfigDir  = ".repowiki"
 	ConfigFile = "config.json"
 	LogDir     = "logs"
+
+	EngineQoder     = "qoder"
+	EngineClaudeCode = "claude-code"
+	EngineCodex     = "codex"
 )
 
 type Config struct {
 	Enabled               bool     `json:"enabled"`
-	QoderCLIPath          string   `json:"qodercli_path"`
+	Engine                string   `json:"engine"`
+	EnginePath            string   `json:"engine_path,omitempty"`
 	Model                 string   `json:"model"`
 	MaxTurns              int      `json:"max_turns"`
 	Language              string   `json:"language"`
@@ -32,8 +37,9 @@ type Config struct {
 func Default() *Config {
 	return &Config{
 		Enabled:      true,
-		QoderCLIPath: "qodercli",
-		Model:        "auto",
+		Engine:       EngineQoder,
+		EnginePath:   "",
+		Model:        "",
 		MaxTurns:     50,
 		Language:     "en",
 		AutoCommit:   true,
@@ -48,6 +54,17 @@ func Default() *Config {
 		WikiPath:              ".qoder/repowiki",
 		FullGenerateThreshold: 20,
 	}
+}
+
+var ValidEngines = []string{EngineQoder, EngineClaudeCode, EngineCodex}
+
+func IsValidEngine(engine string) bool {
+	for _, e := range ValidEngines {
+		if e == engine {
+			return true
+		}
+	}
+	return false
 }
 
 func Dir(gitRoot string) string {
@@ -70,6 +87,10 @@ func Load(gitRoot string) (*Config, error) {
 	var cfg Config
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return nil, fmt.Errorf("failed to parse config: %w", err)
+	}
+	// Migration: old configs without engine field default to qoder
+	if cfg.Engine == "" {
+		cfg.Engine = EngineQoder
 	}
 	return &cfg, nil
 }

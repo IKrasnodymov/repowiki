@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ikrasnodymov/repowiki/internal/config"
 	"github.com/ikrasnodymov/repowiki/internal/git"
@@ -15,8 +16,9 @@ import (
 func handleEnable(args []string) {
 	fs := flag.NewFlagSet("enable", flag.ExitOnError)
 	force := fs.Bool("force", false, "reinstall hook even if present")
-	qoderPath := fs.String("qodercli-path", "", "path to qodercli binary")
-	model := fs.String("model", "", "qoder model level")
+	engine := fs.String("engine", "", "AI engine: qoder, claude-code, codex")
+	enginePath := fs.String("engine-path", "", "path to engine CLI binary")
+	model := fs.String("model", "", "model level (engine-specific)")
 	noAutoCommit := fs.Bool("no-auto-commit", false, "don't auto-commit wiki changes")
 	fs.Parse(args)
 
@@ -33,8 +35,15 @@ func handleEnable(args []string) {
 	}
 
 	// Apply flag overrides
-	if *qoderPath != "" {
-		cfg.QoderCLIPath = *qoderPath
+	if *engine != "" {
+		if !config.IsValidEngine(*engine) {
+			fmt.Fprintf(os.Stderr, "Error: unknown engine %q (valid: %s)\n", *engine, strings.Join(config.ValidEngines, ", "))
+			os.Exit(1)
+		}
+		cfg.Engine = *engine
+	}
+	if *enginePath != "" {
+		cfg.EnginePath = *enginePath
 	}
 	if *model != "" {
 		cfg.Model = *model
@@ -44,12 +53,11 @@ func handleEnable(args []string) {
 	}
 	cfg.Enabled = true
 
-	// Validate qodercli is reachable
-	testCfg := *cfg
-	_, findErr := wiki.FindQoderCLI(&testCfg)
+	// Validate engine binary is reachable
+	binPath, findErr := wiki.FindEngineBinary(cfg)
 	if findErr != nil {
 		fmt.Fprintf(os.Stderr, "Warning: %v\n", findErr)
-		fmt.Fprintf(os.Stderr, "You can set the path later with: repowiki enable --qodercli-path /path/to/qodercli\n\n")
+		fmt.Fprintf(os.Stderr, "Set the path with: repowiki enable --engine-path /path/to/binary\n\n")
 	}
 
 	// Save config
@@ -67,15 +75,16 @@ func handleEnable(args []string) {
 		os.Exit(1)
 	}
 
-	// Create custom Qoder command
+	// Create custom Qoder command (useful even with other engines)
 	createQoderCommand(gitRoot)
 
 	fmt.Printf("repowiki enabled in %s\n\n", gitRoot)
+	fmt.Printf("  Engine:  %s\n", cfg.Engine)
+	if findErr == nil {
+		fmt.Printf("  Binary:  %s\n", binPath)
+	}
 	fmt.Printf("  Config:  %s\n", config.Path(gitRoot))
 	fmt.Printf("  Hook:    .git/hooks/post-commit\n")
-	if findErr == nil {
-		fmt.Printf("  Qoder:   found\n")
-	}
 	fmt.Printf("\nEvery commit will now auto-update the repo wiki.\n")
 	fmt.Printf("Run 'repowiki generate' for initial full wiki generation.\n")
 }

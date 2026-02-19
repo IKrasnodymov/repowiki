@@ -34,6 +34,9 @@ func handleStatus(args []string) {
 		fmt.Printf("  Status:       disabled\n")
 	}
 
+	// Engine
+	fmt.Printf("  Engine:       %s\n", cfg.Engine)
+
 	// Hook
 	if hook.IsInstalled(gitRoot) {
 		fmt.Printf("  Hook:         installed (.git/hooks/post-commit)\n")
@@ -41,12 +44,12 @@ func handleStatus(args []string) {
 		fmt.Printf("  Hook:         not installed\n")
 	}
 
-	// Qoder CLI
-	cliPath, qoderErr := wiki.FindQoderCLI(cfg)
-	if qoderErr == nil {
-		fmt.Printf("  Qoder CLI:    %s\n", cliPath)
+	// Engine binary
+	binPath, engineErr := wiki.FindEngineBinary(cfg)
+	if engineErr == nil {
+		fmt.Printf("  Binary:       %s\n", binPath)
 	} else {
-		fmt.Printf("  Qoder CLI:    not found\n")
+		fmt.Printf("  Binary:       not found (%s)\n", cfg.Engine)
 	}
 
 	// Wiki
@@ -60,7 +63,9 @@ func handleStatus(args []string) {
 	}
 
 	// Config details
-	fmt.Printf("  Model:        %s\n", cfg.Model)
+	if cfg.Model != "" {
+		fmt.Printf("  Model:        %s\n", cfg.Model)
+	}
 	fmt.Printf("  Auto-commit:  %v\n", cfg.AutoCommit)
 	fmt.Printf("  Max turns:    %d\n", cfg.MaxTurns)
 
