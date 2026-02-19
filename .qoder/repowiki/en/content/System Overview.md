@@ -29,8 +29,9 @@ Key capabilities:
 - **Automatic wiki generation** triggered on every git commit
 - **Incremental updates** for efficient processing of small changes
 - **Full regeneration** when significant changes occur
-- **Loop prevention** to avoid infinite commit cycles
+- **Loop prevention** to avoid infinite commit cycles (3-layer protection)
 - **Configurable** via JSON configuration file
+- **Hook coexistence** — works alongside existing git hooks without disruption
 
 ## High-Level Architecture
 

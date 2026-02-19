@@ -19,7 +19,7 @@ Source files referenced:
 
 ## Programming Language
 
-**Go 1.25.0** — The entire project is written in Go, leveraging:
+**Go 1.22+** — The entire project is written in Go, leveraging:
 - Standard library for all core functionality
 - No external dependencies (zero third-party imports)
 - Cross-platform compatibility (macOS, Linux)
@@ -27,9 +27,9 @@ Source files referenced:
 
 ```go
 // go.mod
-module github.com/ikrasnodymov/repowiki
+module github.com/IKrasnodymov/repowiki
 
-go 1.25.0
+go 1.22.0
 ```
 
 ## Build System

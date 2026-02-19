@@ -23,8 +23,9 @@ Source files referenced:
 Before using repowiki, ensure you have:
 
 1. **Git repository** with at least one commit
-2. **Go 1.25+** installed (for building from source)
+2. **Go 1.22+** installed (for building from source)
 3. **Qoder CLI** (`qodercli`) installed and accessible
+4. **Qoder account** — free or Pro (needed for `qodercli` authentication)
 
 ### Checking Requirements
 
@@ -45,12 +46,19 @@ qodercli --version
 
 ```bash
 # Install directly
-go install github.com/ikrasnodymov/repowiki/cmd/repowiki@latest
+go install github.com/IKrasnodymov/repowiki/cmd/repowiki@latest
 
 # Or clone and build
-git clone https://github.com/ikrasnodymov/repowiki.git
+git clone https://github.com/IKrasnodymov/repowiki.git
 cd repowiki
 make install
+```
+
+Make sure `~/go/bin` is in your PATH:
+
+```bash
+# Add to ~/.zshrc or ~/.bashrc
+export PATH="$HOME/go/bin:$PATH"
 ```
 
 ### Build Locally
@@ -180,6 +188,9 @@ repowiki generate
 
 # Update for specific commit
 repowiki update --commit abc123
+
+# View latest generation log
+repowiki logs
 
 # Disable repowiki
 repowiki disable
