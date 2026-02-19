@@ -58,8 +58,11 @@ func handleEnable(args []string) {
 		os.Exit(1)
 	}
 
+	// Determine absolute path to this binary for the hook
+	selfPath, _ := os.Executable()
+
 	// Install git hook
-	if err := hook.Install(gitRoot, *force); err != nil {
+	if err := hook.Install(gitRoot, *force, selfPath); err != nil {
 		fmt.Fprintf(os.Stderr, "Error installing hook: %v\n", err)
 		os.Exit(1)
 	}
