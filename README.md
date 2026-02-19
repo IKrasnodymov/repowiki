@@ -238,6 +238,22 @@ fi
 # repowiki hook end
 ```
 
+## Uninstall
+
+### Remove from a project
+
+```bash
+repowiki disable          # removes git hook, preserves wiki files
+rm -rf .repowiki/         # remove config and logs
+rm -rf .qoder/repowiki/   # remove generated wiki (optional)
+```
+
+### Remove the binary
+
+```bash
+rm $(which repowiki)      # usually ~/go/bin/repowiki
+```
+
 ## Troubleshooting
 
 ### Engine binary not found
