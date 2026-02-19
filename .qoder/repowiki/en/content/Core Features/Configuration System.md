@@ -234,6 +234,29 @@ func Save(gitRoot string, cfg *Config) error {
 }
 ```
 
+### Engine Validation
+
+The config package provides engine validation to ensure only supported engines are configured:
+
+```go
+const (
+    EngineQoder      = "qoder"
+    EngineClaudeCode = "claude-code"
+    EngineCodex      = "codex"
+)
+
+var ValidEngines = []string{EngineQoder, EngineClaudeCode, EngineCodex}
+
+func IsValidEngine(engine string) bool {
+    for _, e := range ValidEngines {
+        if e == engine {
+            return true
+        }
+    }
+    return false
+}
+```
+
 ### Usage in Commands
 
 ```go
@@ -295,6 +318,8 @@ func UpdateLastRun(gitRoot string, commitHash string) error {
 
 ### Usage in Update Flow
 
+The `LastCommitHash` field enables incremental updates by tracking which commit was last processed:
+
 ```go
 // cmd/repowiki/update.go
 func handleUpdate(args []string) {
@@ -302,12 +327,14 @@ func handleUpdate(args []string) {
     // Get changed files since last run
     if cfg.LastCommitHash != "" && cfg.LastCommitHash != hash {
         changedFiles, err = git.ChangedFilesSince(gitRoot, cfg.LastCommitHash)
+    } else {
+        changedFiles, err = git.ChangedFilesInCommit(gitRoot, hash)
     }
 
     // ... perform update ...
 
-    // Update tracking
-    config.UpdateLastRun(gitRoot, hash)
+    // Update tracking (called by wiki engine when auto_commit is enabled)
+    // config.UpdateLastRun(gitRoot, hash)
 }
 ```
 

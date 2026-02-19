@@ -86,7 +86,7 @@ type Config struct {
 func Default() *Config {
     return &Config{
         Enabled:      true,
-        Engine:       "qoder",
+        Engine:       EngineQoder,
         EnginePath:   "",
         Model:        "",
         MaxTurns:     50,
@@ -105,6 +105,8 @@ func Default() *Config {
     }
 }
 ```
+
+Note: Engine constants (`EngineQoder`, `EngineClaudeCode`, `EngineCodex`) are defined for type safety and validation.
 
 ### Path Helpers
 
@@ -156,6 +158,8 @@ func Save(gitRoot string, cfg *Config) error {
 
 ### Last Run Tracking
 
+The `UpdateLastRun()` function updates the configuration after each successful wiki generation:
+
 ```go
 func UpdateLastRun(gitRoot string, commitHash string) error {
     cfg, err := Load(gitRoot)
@@ -167,6 +171,12 @@ func UpdateLastRun(gitRoot string, commitHash string) error {
     return Save(gitRoot, cfg)
 }
 ```
+
+This function is called by the wiki engine (in `wiki.go`) when `auto_commit` is enabled. It tracks:
+- `last_run`: ISO 8601 timestamp of when the wiki was last updated
+- `last_commit_hash`: The git commit hash that was processed
+
+These fields enable incremental updates by allowing the system to determine which files have changed since the last wiki generation using `git.ChangedFilesSince()`.
 
 ## git Package
 

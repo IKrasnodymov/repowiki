@@ -124,9 +124,19 @@ repowiki enable --force
 # Specify custom engine binary path
 repowiki enable --engine-path /path/to/engine
 
-# Disable auto-commit
+# Disable auto-commit (generate wiki but don't commit automatically)
 repowiki enable --no-auto-commit
 ```
+
+### Enable Command Flags
+
+| Flag | Description |
+|------|-------------|
+| `--engine` | AI engine: `qoder`, `claude-code`, or `codex` (default: `qoder`) |
+| `--engine-path` | Custom path to the engine CLI binary |
+| `--model` | Engine-specific model (e.g., `sonnet` for Claude) |
+| `--force` | Reinstall hook even if already present |
+| `--no-auto-commit` | Generate wiki but don't auto-commit changes |
 
 ### What Happens During Enable
 

@@ -208,12 +208,24 @@ repowiki v0.1.0
   Hook:         installed (.git/hooks/post-commit)
   Binary:       /usr/local/bin/qodercli
   Wiki path:    .qoder/repowiki/en/content/ (12 pages)
-  Model:        auto
+  Model:        sonnet
   Auto-commit:  true
   Max turns:    50
   Last run:     2026-02-19T15:30:00Z
   Last commit:  abc123def456
 ```
+
+The status output includes:
+- **Status**: Whether repowiki is enabled or disabled
+- **Engine**: The configured AI engine (qoder, claude-code, or codex)
+- **Hook**: Whether the post-commit hook is installed
+- **Binary**: Path to the engine CLI binary (if found)
+- **Wiki path**: Location and page count of generated wiki
+- **Model**: Engine-specific model (if configured)
+- **Auto-commit**: Whether wiki changes are automatically committed
+- **Max turns**: Maximum AI interaction turns per generation
+- **Last run**: Timestamp of the most recent wiki generation
+- **Last commit**: Git hash of the last processed commit
 
 ## generate
 

@@ -90,9 +90,25 @@ func handleUpdate(args []string) {
 
     // Decide: full generate or incremental
     if !wiki.Exists(gitRoot, cfg) || len(changedFiles) > cfg.FullGenerateThreshold {
-        wiki.FullGenerate(gitRoot, cfg)
+        if !*fromHook {
+            fmt.Printf("Running full wiki generation (%d files changed)...\n", len(changedFiles))
+        }
+        if err := wiki.FullGenerate(gitRoot, cfg, hash); err != nil {
+            fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+            os.Exit(1)
+        }
     } else {
-        wiki.IncrementalUpdate(gitRoot, cfg, changedFiles)
+        if !*fromHook {
+            fmt.Printf("Updating wiki for %d changed files...\n", len(changedFiles))
+        }
+        if err := wiki.IncrementalUpdate(gitRoot, cfg, changedFiles, hash); err != nil {
+            fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+            os.Exit(1)
+        }
+    }
+
+    if !*fromHook {
+        fmt.Println("Wiki update complete.")
     }
 }
 ```

@@ -59,7 +59,7 @@ flowchart TB
 Performs complete wiki generation from scratch:
 
 ```go
-func FullGenerate(gitRoot string, cfg *config.Config) error {
+func FullGenerate(gitRoot string, cfg *config.Config, commitHash string) error {
     // Acquire process lock
     if err := lockfile.Acquire(gitRoot); err != nil {
         return fmt.Errorf("cannot acquire lock: %w", err)
@@ -74,14 +74,15 @@ func FullGenerate(gitRoot string, cfg *config.Config) error {
     // Execute AI engine
     output, err := RunEngine(cfg, gitRoot, prompt)
     if err != nil {
-        logf(gitRoot, "qodercli failed: %v", err)
+        logf(gitRoot, "engine failed: %v", err)
         return fmt.Errorf("wiki generation failed: %w", err)
     }
 
-    logf(gitRoot, "qodercli completed, output length: %d", len(output))
+    logf(gitRoot, "engine completed, output length: %d", len(output))
 
     // Auto-commit if enabled
     if cfg.AutoCommit {
+        config.UpdateLastRun(gitRoot, commitHash)
         if err := CommitChanges(gitRoot, cfg, "full wiki generation"); err != nil {
             logf(gitRoot, "auto-commit failed: %v", err)
             return err
@@ -93,12 +94,14 @@ func FullGenerate(gitRoot string, cfg *config.Config) error {
 }
 ```
 
+The `commitHash` parameter is used to update the `last_commit_hash` tracking field in the configuration after successful generation, enabling incremental updates on subsequent runs.
+
 ### Incremental Update
 
 Updates wiki for specific changed files:
 
 ```go
-func IncrementalUpdate(gitRoot string, cfg *config.Config, changedFiles []string) error {
+func IncrementalUpdate(gitRoot string, cfg *config.Config, changedFiles []string, commitHash string) error {
     if err := lockfile.Acquire(gitRoot); err != nil {
         return fmt.Errorf("cannot acquire lock: %w", err)
     }
@@ -116,14 +119,15 @@ func IncrementalUpdate(gitRoot string, cfg *config.Config, changedFiles []string
     // Execute AI engine
     output, err := RunEngine(cfg, gitRoot, prompt)
     if err != nil {
-        logf(gitRoot, "qodercli failed: %v", err)
+        logf(gitRoot, "engine failed: %v", err)
         return fmt.Errorf("wiki update failed: %w", err)
     }
 
-    logf(gitRoot, "qodercli completed, output length: %d", len(output))
+    logf(gitRoot, "engine completed, output length: %d", len(output))
 
     // Auto-commit if enabled
     if cfg.AutoCommit {
+        config.UpdateLastRun(gitRoot, commitHash)
         desc := fmt.Sprintf("update wiki for %d changed files", len(changedFiles))
         if err := CommitChanges(gitRoot, cfg, desc); err != nil {
             logf(gitRoot, "auto-commit failed: %v", err)

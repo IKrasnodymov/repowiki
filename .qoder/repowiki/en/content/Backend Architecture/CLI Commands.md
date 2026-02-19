@@ -327,20 +327,18 @@ func handleGenerate(args []string) {
 
     cfg, err := config.Load(gitRoot)
     if err != nil {
-        fmt.Fprintf(os.Stderr, "Error: repowiki not configured\n")
+        fmt.Fprintf(os.Stderr, "Error: repowiki not configured. Run 'repowiki enable' first.\n")
         os.Exit(1)
     }
 
-    fmt.Println("Starting full wiki generation...")
+    head, _ := git.HeadCommit(gitRoot)
 
-    if err := wiki.FullGenerate(gitRoot, cfg); err != nil {
+    fmt.Println("Starting full wiki generation... (this may take several minutes)")
+
+    if err := wiki.FullGenerate(gitRoot, cfg, head); err != nil {
         fmt.Fprintf(os.Stderr, "Error: %v\n", err)
         os.Exit(1)
     }
-
-    // Update last run tracking
-    head, _ := git.HeadCommit(gitRoot)
-    config.UpdateLastRun(gitRoot, head)
 
     fmt.Println("Wiki generation complete.")
 }
@@ -398,13 +396,26 @@ func handleUpdate(args []string) {
 
     // 5. Decide: full generate or incremental
     if !wiki.Exists(gitRoot, cfg) || len(changedFiles) > cfg.FullGenerateThreshold {
-        wiki.FullGenerate(gitRoot, cfg)
+        if !*fromHook {
+            fmt.Printf("Running full wiki generation (%d files changed)...\n", len(changedFiles))
+        }
+        if err := wiki.FullGenerate(gitRoot, cfg, hash); err != nil {
+            fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+            os.Exit(1)
+        }
     } else {
-        wiki.IncrementalUpdate(gitRoot, cfg, changedFiles)
+        if !*fromHook {
+            fmt.Printf("Updating wiki for %d changed files...\n", len(changedFiles))
+        }
+        if err := wiki.IncrementalUpdate(gitRoot, cfg, changedFiles, hash); err != nil {
+            fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+            os.Exit(1)
+        }
     }
 
-    // 6. Update last run
-    config.UpdateLastRun(gitRoot, hash)
+    if !*fromHook {
+        fmt.Println("Wiki update complete.")
+    }
 }
 ```
 

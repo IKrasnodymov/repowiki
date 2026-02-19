@@ -5,14 +5,14 @@
       "path": "CLAUDE.md",
       "line_range": "1-110",
       "gmt_create": "2026-02-19T19:30:00Z",
-      "gmt_modified": "2026-02-19T19:30:00Z"
+      "gmt_modified": "2026-02-19T20:05:00Z"
     },
     {
       "id": "d41d8cd98f00b204e9800998ecf8427e",
       "path": "README.md",
-      "line_range": "1-251",
+      "line_range": "1-267",
       "gmt_create": "2026-02-19T16:30:00Z",
-      "gmt_modified": "2026-02-19T19:50:00Z"
+      "gmt_modified": "2026-02-19T20:05:00Z"
     },
     {
       "id": "a3f5c8e9d2b1a4f7e6c3d8b5a2f1e4c7",
@@ -33,14 +33,14 @@
       "path": "cmd/repowiki/main.go",
       "line_range": "1-79",
       "gmt_create": "2026-02-19T16:26:00Z",
-      "gmt_modified": "2026-02-19T19:30:00Z"
+      "gmt_modified": "2026-02-19T20:05:00Z"
     },
     {
       "id": "e3b6c9f2a5d8e1b4c7f0a3d6e9b2c5f8",
       "path": "cmd/repowiki/enable.go",
       "line_range": "1-131",
       "gmt_create": "2026-02-19T16:26:00Z",
-      "gmt_modified": "2026-02-19T19:30:00Z"
+      "gmt_modified": "2026-02-19T20:05:00Z"
     },
     {
       "id": "f1a4d7e0b3c6f9a2d5e8b1c4f7a0d3e6",
@@ -54,21 +54,21 @@
       "path": "cmd/repowiki/status.go",
       "line_range": "1-93",
       "gmt_create": "2026-02-19T16:26:00Z",
-      "gmt_modified": "2026-02-19T16:26:00Z"
+      "gmt_modified": "2026-02-19T20:05:00Z"
     },
     {
       "id": "d7e0a3f6c9b2e5d8a1f4c7b0e3a6d9f2",
       "path": "cmd/repowiki/generate.go",
-      "line_range": "1-38",
+      "line_range": "1-36",
       "gmt_create": "2026-02-19T16:26:00Z",
-      "gmt_modified": "2026-02-19T16:26:00Z"
+      "gmt_modified": "2026-02-19T20:05:00Z"
     },
     {
       "id": "b5e8c1f4a7d0e3b6c9f2a5d8e1b4c7f0",
       "path": "cmd/repowiki/update.go",
-      "line_range": "1-106",
+      "line_range": "1-103",
       "gmt_create": "2026-02-19T16:26:00Z",
-      "gmt_modified": "2026-02-19T16:26:00Z"
+      "gmt_modified": "2026-02-19T20:05:00Z"
     },
     {
       "id": "e2b5c8f1a4e7d0a3f6c9b2e5d8a1f4c7",
@@ -89,7 +89,7 @@
       "path": "internal/config/config.go",
       "line_range": "1-119",
       "gmt_create": "2026-02-19T16:26:00Z",
-      "gmt_modified": "2026-02-19T16:26:00Z"
+      "gmt_modified": "2026-02-19T20:05:00Z"
     },
     {
       "id": "f8c1b4e7a0d3f6c9e2b5a8d1f4c7e0a3",
@@ -115,16 +115,16 @@
     {
       "id": "b2e5d8a1f4c7e0a3f6c9b2e5d8a1f4c7",
       "path": "internal/wiki/wiki.go",
-      "line_range": "1-100",
+      "line_range": "1-102",
       "gmt_create": "2026-02-19T16:26:00Z",
-      "gmt_modified": "2026-02-19T16:26:00Z"
+      "gmt_modified": "2026-02-19T20:05:00Z"
     },
     {
       "id": "e0a3f6c9b2e5d8a1f4c7e0a3f6c9b2e5",
       "path": "internal/wiki/engine.go",
       "line_range": "1-167",
       "gmt_create": "2026-02-19T16:26:00Z",
-      "gmt_modified": "2026-02-19T16:26:00Z"
+      "gmt_modified": "2026-02-19T20:05:00Z"
     },
     {
       "id": "c8f1b4e7a0d3f6c9b2e5d8a1f4c7e0a3",
