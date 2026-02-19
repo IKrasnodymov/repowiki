@@ -96,6 +96,13 @@ When `auto_commit` is enabled, wiki changes are committed automatically with mes
 [repowiki] update wiki for 5 changed files
 ```
 
+To disable auto-commit during setup:
+```bash
+repowiki enable --no-auto-commit
+```
+
+When auto-commit is disabled, the wiki files are still generated but you must commit them manually.
+
 ### Path Settings
 
 | Option | Type | Default | Description |
