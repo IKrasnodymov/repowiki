@@ -26,6 +26,8 @@ func main() {
 		handleUpdate(os.Args[2:])
 	case "hooks":
 		handleHooks(os.Args[2:])
+	case "logs":
+		handleLogs(os.Args[2:])
 	case "version", "--version", "-v":
 		fmt.Printf("repowiki v%s\n", Version)
 	case "help", "--help", "-h":
