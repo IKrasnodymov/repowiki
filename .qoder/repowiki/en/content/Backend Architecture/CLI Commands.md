@@ -362,60 +362,132 @@ Performs incremental or full update based on changed files.
 ```go
 func handleUpdate(args []string) {
     fs := flag.NewFlagSet("update", flag.ExitOnError)
-    commitHash := fs.String("commit", "", "specific commit hash")
-    fromHook := fs.Bool("from-hook", false, "internal: hook-triggered")
+    commitHash := fs.String("commit", "", "specific commit hash to process")
+    fromHook := fs.Bool("from-hook", false, "internal: hook-triggered run")
     fs.Parse(args)
 
-    // 1. Get git root and config
     gitRoot, err := git.FindRoot()
-    cfg, err := config.Load(gitRoot)
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error: not a git repository\n")
+        os.Exit(1)
+    }
 
-    // 2. Determine commit to process
+    cfg, err := config.Load(gitRoot)
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error: repowiki not configured. Run 'repowiki enable' first.\n")
+        os.Exit(1)
+    }
+
     hash := *commitHash
     if hash == "" {
         hash, err = git.HeadCommit(gitRoot)
-    }
-
-    // 3. Get changed files
-    var changedFiles []string
-    if cfg.LastCommitHash != "" && cfg.LastCommitHash != hash {
-        changedFiles, err = git.ChangedFilesSince(gitRoot, cfg.LastCommitHash)
-    } else {
-        changedFiles, err = git.ChangedFilesInCommit(gitRoot, hash)
-    }
-
-    // 4. Filter excluded paths
-    changedFiles = filterExcluded(changedFiles, cfg.ExcludedPaths)
-
-    if len(changedFiles) == 0 {
-        if !*fromHook {
-            fmt.Println("No relevant file changes detected.")
-        }
-        return
-    }
-
-    // 5. Decide: full generate or incremental
-    if !wiki.Exists(gitRoot, cfg) || len(changedFiles) > cfg.FullGenerateThreshold {
-        if !*fromHook {
-            fmt.Printf("Running full wiki generation (%d files changed)...\n", len(changedFiles))
-        }
-        if err := wiki.FullGenerate(gitRoot, cfg, hash); err != nil {
-            fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+        if err != nil {
+            fmt.Fprintf(os.Stderr, "Error getting HEAD: %v\n", err)
             os.Exit(1)
         }
-    } else {
-        if !*fromHook {
-            fmt.Printf("Updating wiki for %d changed files...\n", len(changedFiles))
-        }
-        if err := wiki.IncrementalUpdate(gitRoot, cfg, changedFiles, hash); err != nil {
-            fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-            os.Exit(1)
+    }
+
+    if err := runUpdateCycle(gitRoot, cfg, hash, *fromHook); err != nil {
+        fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+        os.Exit(1)
+    }
+
+    // When running from hook, check if new commits arrived during generation.
+    // If a commit happened while we held the lock, its hook exited silently.
+    // Re-run to pick up those missed changes.
+    if *fromHook {
+        for i := 0; i < 5; i++ { // cap retries to avoid runaway loops
+            cfg, err = config.Load(gitRoot)
+            if err != nil {
+                break
+            }
+            head, err := git.HeadCommit(gitRoot)
+            if err != nil {
+                break
+            }
+            if !hasUnprocessedCommits(gitRoot, cfg, head) {
+                break
+            }
+            if err := runUpdateCycle(gitRoot, cfg, head, true); err != nil {
+                break
+            }
         }
     }
 
     if !*fromHook {
         fmt.Println("Wiki update complete.")
     }
+}
+```
+
+### Retry Logic for Concurrent Commits
+
+When running from the post-commit hook, the update command implements retry logic to handle commits that arrive during wiki generation:
+
+```go
+// hasUnprocessedCommits checks if there are non-repowiki commits after the
+// last processed commit.
+func hasUnprocessedCommits(gitRoot string, cfg *config.Config, head string) bool {
+    if cfg.LastCommitHash == "" || cfg.LastCommitHash == head {
+        return false
+    }
+    // Check that the gap contains actual code changes, not just repowiki commits
+    files, err := git.ChangedFilesSince(gitRoot, cfg.LastCommitHash)
+    if err != nil {
+        return false
+    }
+    files = filterExcluded(files, cfg.ExcludedPaths)
+    return len(files) > 0
+}
+```
+
+This prevents missed updates when:
+1. A commit triggers the hook
+2. The hook acquires the lock and starts generation
+3. Another commit occurs during generation (its hook exits due to lock)
+4. After generation completes, the retry loop detects unprocessed commits
+5. The update cycle runs again to catch up
+
+The retry loop is capped at 5 iterations to prevent runaway processing.
+
+### Update Cycle
+
+The core update logic is extracted into a reusable function:
+
+```go
+// runUpdateCycle performs a single update cycle: detect changes, run generation.
+func runUpdateCycle(gitRoot string, cfg *config.Config, hash string, fromHook bool) error {
+    var changedFiles []string
+    var err error
+    if cfg.LastCommitHash != "" && cfg.LastCommitHash != hash {
+        changedFiles, err = git.ChangedFilesSince(gitRoot, cfg.LastCommitHash)
+    } else {
+        changedFiles, err = git.ChangedFilesInCommit(gitRoot, hash)
+    }
+    if err != nil {
+        return fmt.Errorf("detecting changes: %w", err)
+    }
+
+    changedFiles = filterExcluded(changedFiles, cfg.ExcludedPaths)
+
+    if len(changedFiles) == 0 {
+        if !fromHook {
+            fmt.Println("No relevant file changes detected.")
+        }
+        return nil
+    }
+
+    if !wiki.Exists(gitRoot, cfg) || len(changedFiles) > cfg.FullGenerateThreshold {
+        if !fromHook {
+            fmt.Printf("Running full wiki generation (%d files changed)...\n", len(changedFiles))
+        }
+        return wiki.FullGenerate(gitRoot, cfg, hash)
+    }
+
+    if !fromHook {
+        fmt.Printf("Updating wiki for %d changed files...\n", len(changedFiles))
+    }
+    return wiki.IncrementalUpdate(gitRoot, cfg, changedFiles, hash)
 }
 ```
 
