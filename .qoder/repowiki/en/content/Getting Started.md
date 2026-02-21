@@ -115,7 +115,12 @@ cd /path/to/your/project
 repowiki enable
 ```
 
-This command:
+This command will **auto-detect** the first available AI engine in the following priority order:
+1. `claude-code` (Claude CLI)
+2. `qoder` (Qoder CLI)
+3. `codex` (OpenAI Codex CLI)
+
+The command also:
 1. Creates `.repowiki/config.json` with default settings
 2. Installs a post-commit hook in `.git/hooks/post-commit`
 3. Creates a custom Qoder command at `.qoder/commands/update-wiki.md`
@@ -123,11 +128,14 @@ This command:
 ### Enable Options
 
 ```bash
-# Enable with Qoder (default)
+# Enable with auto-detected engine (tries claude-code, qoder, codex in order)
 repowiki enable
 
-# Enable with Claude Code
+# Enable with specific engine
 repowiki enable --engine claude-code
+
+# Enable with Qoder explicitly
+repowiki enable --engine qoder
 
 # Enable with OpenAI Codex
 repowiki enable --engine codex
@@ -149,11 +157,36 @@ repowiki enable --no-auto-commit
 
 | Flag | Description |
 |------|-------------|
-| `--engine` | AI engine: `qoder`, `claude-code`, or `codex` (default: `qoder`) |
+| `--engine` | AI engine: `qoder`, `claude-code`, or `codex` (auto-detected if not specified) |
 | `--engine-path` | Custom path to the engine CLI binary |
 | `--model` | Engine-specific model (e.g., `sonnet` for Claude, `performance` for Qoder) |
 | `--force` | Reinstall hook even if already present |
 | `--no-auto-commit` | Generate wiki but don't auto-commit changes |
+
+### Engine Auto-Detection
+
+When you run `repowiki enable` without specifying an engine, repowiki attempts to find an available AI engine automatically in this priority order:
+
+1. `claude-code` (Claude Code by Anthropic) — most commonly available
+2. `qoder` (Qoder CLI)
+3. `codex` (OpenAI Codex CLI)
+
+The first successfully detected engine will be used. If you explicitly specify an engine with `--engine` or `--engine-path`, auto-detection is skipped and the command will fail if that specific engine is not found.
+
+Example output with auto-detection:
+```
+Auto-detected engine: claude-code (/usr/local/bin/claude)
+
+repowiki enabled in /path/to/project
+
+  Engine:  claude-code
+  Binary:  /usr/local/bin/claude
+  Config:  .repowiki/config.json
+  Hook:    .git/hooks/post-commit
+
+Every commit will now auto-update the repo wiki.
+Run 'repowiki generate' for initial full wiki generation.
+```
 
 ### What Happens During Enable
 
@@ -162,15 +195,16 @@ repowiki enable --no-auto-commit
 func handleEnable(args []string) {
     // 1. Find git root
     gitRoot, err := git.FindRoot()
-    
+
     // 2. Load or create config
     cfg, err := config.Load(gitRoot)
     if err != nil {
         cfg = config.Default()
     }
-    
+
     // 3. Apply flag overrides
-    if *engine != "" {
+    engineExplicit := *engine != ""
+    if engineExplicit {
         if !config.IsValidEngine(*engine) {
             fmt.Fprintf(os.Stderr, "Error: unknown engine %q\n", *engine)
             os.Exit(1)
@@ -181,16 +215,32 @@ func handleEnable(args []string) {
         cfg.EnginePath = *enginePath
     }
     cfg.Enabled = true
-    
-    // 4. Validate engine binary
-    _, findErr := wiki.FindEngineBinary(cfg)
-    
+
+    // 4. Validate engine binary (with auto-detection fallback)
+    binPath, findErr := wiki.FindEngineBinary(cfg)
+    if findErr != nil {
+        if engineExplicit || *enginePath != "" {
+            // Explicit engine not found — fail hard
+            fmt.Fprintf(os.Stderr, "Error: %v\n", findErr)
+            os.Exit(1)
+        }
+        // Auto-detect first available engine
+        for _, eng := range config.EngineDetectOrder {
+            cfg.Engine = eng
+            cfg.EnginePath = ""
+            binPath, findErr = wiki.FindEngineBinary(cfg)
+            if findErr == nil {
+                break
+            }
+        }
+    }
+
     // 5. Save config
     config.Save(gitRoot, cfg)
-    
+
     // 6. Install git hook
     hook.Install(gitRoot, *force, selfPath)
-    
+
     // 7. Create Qoder command
     createQoderCommand(gitRoot)
 }

@@ -44,7 +44,7 @@ Commands:
   version     Show version
 
 Flags for 'enable':
-  --engine            AI engine: qoder, claude-code, codex (default: qoder)
+  --engine            AI engine: qoder, claude-code, codex (auto-detected if not specified)
   --engine-path       Path to engine CLI binary
   --model             Model level (engine-specific)
   --force             Reinstall hook even if already present
@@ -76,11 +76,18 @@ repowiki enable [flags]
 
 Installs the post-commit git hook and creates the configuration file. This is the first command to run when setting up repowiki in a project.
 
+If no engine is explicitly specified with `--engine`, repowiki will auto-detect the first available engine from the following priority order:
+1. `claude-code` (Claude CLI)
+2. `qoder` (Qoder CLI)
+3. `codex` (OpenAI Codex CLI)
+
+Engine binaries are searched in: config `engine_path` → `$PATH` → known OS locations.
+
 ### Flags
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--engine` | string | "qoder" | AI engine: `qoder`, `claude-code`, `codex` |
+| `--engine` | string | auto-detected | AI engine: `qoder`, `claude-code`, `codex` |
 | `--engine-path` | string | "" | Path to engine CLI binary |
 | `--model` | string | "" | Engine-specific model (e.g., `sonnet` for Claude) |
 | `--force` | bool | false | Reinstall hook even if already present |
@@ -89,13 +96,16 @@ Installs the post-commit git hook and creates the configuration file. This is th
 ### Examples
 
 ```bash
-# Enable with Qoder (default)
+# Enable with auto-detected engine
 repowiki enable
 
-# Enable with Claude Code
+# Enable with specific engine
 repowiki enable --engine claude-code
 
-# Enable with OpenAI Codex
+# Enable with specific engine (Qoder)
+repowiki enable --engine qoder
+
+# Enable with specific engine (Codex)
 repowiki enable --engine codex
 
 # Enable with specific model
@@ -121,16 +131,20 @@ repowiki enable --no-auto-commit
 ### Output Example
 
 ```
+Auto-detected engine: claude-code (/usr/local/bin/claude)
+
 repowiki enabled in /path/to/project
 
-  Engine:  qoder
-  Binary:  /usr/local/bin/qodercli
+  Engine:  claude-code
+  Binary:  /usr/local/bin/claude
   Config:  .repowiki/config.json
   Hook:    .git/hooks/post-commit
 
 Every commit will now auto-update the repo wiki.
 Run 'repowiki generate' for initial full wiki generation.
 ```
+
+If an engine is explicitly specified or `--engine-path` is provided, auto-detection is skipped and the command will fail if the binary is not found.
 
 ## disable
 
@@ -392,7 +406,7 @@ Commands:
   version     Show version
 
 Flags for 'enable':
-  --engine            AI engine: qoder, claude-code, codex (default: qoder)
+  --engine            AI engine: qoder, claude-code, codex (auto-detected if not specified)
   --engine-path       Path to engine CLI binary
   --model             Model level (engine-specific)
   --force             Reinstall hook even if already present
@@ -403,7 +417,7 @@ Flags for 'update':
   --from-hook         Internal: indicates hook-triggered run
 
 Examples:
-  repowiki enable                               # Enable with Qoder (default)
+  repowiki enable                               # Enable with auto-detected engine
   repowiki enable --engine claude-code           # Enable with Claude Code
   repowiki enable --engine codex                 # Enable with OpenAI Codex
   repowiki enable --engine claude-code --model sonnet  # With specific model

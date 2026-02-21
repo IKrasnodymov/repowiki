@@ -67,6 +67,18 @@ repowiki stores its configuration in `.repowiki/config.json`. This file is creat
 | `claude-code` | `claude` | Claude Code by Anthropic |
 | `codex` | `codex` | OpenAI Codex CLI |
 
+### Engine Auto-Detection
+
+When running `repowiki enable` without explicitly specifying an engine, repowiki attempts to auto-detect an available engine. The detection order is:
+
+1. `claude-code` (Claude Code by Anthropic)
+2. `qoder` (Qoder CLI)
+3. `codex` (OpenAI Codex CLI)
+
+If the default engine (`qoder`) is not found, repowiki iterates through the detection order and uses the first available engine. This behavior is controlled by the `EngineDetectOrder` slice in the config package.
+
+If an engine is explicitly specified via `--engine` or `--engine-path` but not found, the command fails with an error rather than attempting auto-detection.
+
 ### Model Selection
 
 Model values are engine-specific:

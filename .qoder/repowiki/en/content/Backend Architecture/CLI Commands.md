@@ -90,11 +90,21 @@ Installs repowiki into the current git repository.
 
 | Flag | Type | Description |
 |------|------|-------------|
-| `--engine` | string | AI engine: `qoder`, `claude-code`, `codex` (default: `qoder`) |
+| `--engine` | string | AI engine: `qoder`, `claude-code`, `codex` (default: `qoder`, auto-detected if not found) |
 | `--engine-path` | string | Path to engine CLI binary |
 | `--model` | string | Engine-specific model level |
 | `--force` | bool | Reinstall hook even if already present |
 | `--no-auto-commit` | bool | Don't auto-commit wiki changes |
+
+### Engine Auto-Detection
+
+When no engine is explicitly specified via `--engine` or `--engine-path`, and the default engine (`qoder`) is not found, repowiki automatically attempts to detect an available engine. The detection order is:
+
+1. `claude-code` (Claude Code by Anthropic)
+2. `qoder` (Qoder CLI)
+3. `codex` (OpenAI Codex CLI)
+
+If an engine is explicitly specified but not found, the command fails with an error. If no engines are found after auto-detection, the command exits with an error message prompting the user to install an engine or specify a custom path.
 
 ### Implementation
 
@@ -122,7 +132,8 @@ func handleEnable(args []string) {
     }
 
     // 3. Apply flag overrides
-    if *engine != "" {
+    engineExplicit := *engine != ""
+    if engineExplicit {
         if !config.IsValidEngine(*engine) {
             fmt.Fprintf(os.Stderr, "Error: unknown engine %q\n", *engine)
             os.Exit(1)
@@ -143,18 +154,41 @@ func handleEnable(args []string) {
     // 4. Validate engine binary is reachable
     binPath, findErr := wiki.FindEngineBinary(cfg)
     if findErr != nil {
-        fmt.Fprintf(os.Stderr, "Warning: %v\n", findErr)
+        if engineExplicit || *enginePath != "" {
+            // User explicitly chose this engine — fail hard
+            fmt.Fprintf(os.Stderr, "Error: %v\n", findErr)
+            fmt.Fprintf(os.Stderr, "Set the path with: repowiki enable --engine-path /path/to/binary\n")
+            os.Exit(1)
+        }
+        // No explicit engine — auto-detect the first available one
+        detected := false
+        for _, eng := range config.EngineDetectOrder {
+            cfg.Engine = eng
+            cfg.EnginePath = ""
+            binPath, findErr = wiki.FindEngineBinary(cfg)
+            if findErr == nil {
+                detected = true
+                break
+            }
+        }
+        if !detected {
+            fmt.Fprintf(os.Stderr, "Error: no supported AI engine found\n")
+            fmt.Fprintf(os.Stderr, "Install one of: qodercli, claude, codex\n")
+            fmt.Fprintf(os.Stderr, "Or specify a path: repowiki enable --engine claude-code --engine-path /path/to/claude\n")
+            os.Exit(1)
+        }
+        fmt.Printf("Auto-detected engine: %s (%s)\n\n", cfg.Engine, binPath)
     }
 
     // 5. Save config
     config.Save(gitRoot, cfg)
-    
+
     // 6. Determine absolute path to this binary for the hook
     selfPath, _ := os.Executable()
-    
+
     // 7. Install git hook
     hook.Install(gitRoot, *force, selfPath)
-    
+
     // 8. Create Qoder command
     createQoderCommand(gitRoot)
 }

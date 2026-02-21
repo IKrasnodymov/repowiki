@@ -120,7 +120,7 @@ type Config struct {
 func Default() *Config {
     return &Config{
         Enabled:      true,
-        Engine:       "qoder",
+        Engine:       "qoder",    // Note: will be auto-detected during enable if not specified
         EnginePath:   "",
         Model:        "",
         MaxTurns:     50,
@@ -166,6 +166,10 @@ const (
 )
 
 var ValidEngines = []string{EngineQoder, EngineClaudeCode, EngineCodex}
+
+// EngineDetectOrder is the order in which engines are tried during auto-detection.
+// claude-code first because it's the most commonly available.
+var EngineDetectOrder = []string{EngineClaudeCode, EngineQoder, EngineCodex}
 
 func IsValidEngine(engine string) bool {
     for _, e := range ValidEngines {
@@ -247,6 +251,10 @@ const (
 
 var ValidEngines = []string{EngineQoder, EngineClaudeCode, EngineCodex}
 
+// EngineDetectOrder is the order in which engines are tried during auto-detection.
+// claude-code first because it's the most commonly available.
+var EngineDetectOrder = []string{EngineClaudeCode, EngineQoder, EngineCodex}
+
 func IsValidEngine(engine string) bool {
     for _, e := range ValidEngines {
         if e == engine {
@@ -256,6 +264,8 @@ func IsValidEngine(engine string) bool {
     return false
 }
 ```
+
+The `EngineDetectOrder` variable defines the priority order for engine auto-detection during `repowiki enable`. When no engine is explicitly specified and the default (`qoder`) is not found, repowiki attempts to detect engines in this order: `claude-code` → `qoder` → `codex`.
 
 ### Usage in Commands
 
@@ -269,7 +279,8 @@ func handleEnable(args []string) {
     }
 
     // Apply CLI flag overrides
-    if *engine != "" {
+    engineExplicit := *engine != ""
+    if engineExplicit {
         if !config.IsValidEngine(*engine) {
             fmt.Fprintf(os.Stderr, "Error: unknown engine %q\n", *engine)
             os.Exit(1)
@@ -290,8 +301,43 @@ func handleEnable(args []string) {
     // Validate engine binary is reachable
     binPath, findErr := wiki.FindEngineBinary(cfg)
     if findErr != nil {
-        fmt.Fprintf(os.Stderr, "Warning: %v\n", findErr)
+        if engineExplicit || *enginePath != "" {
+            // User explicitly chose this engine — fail hard
+            fmt.Fprintf(os.Stderr, "Error: %v\n", findErr)
+            os.Exit(1)
+        }
+        // No explicit engine — auto-detect the first available one
+        detected := false
+        for _, eng := range config.EngineDetectOrder {
+            cfg.Engine = eng
+            cfg.EnginePath = ""
+            binPath, findErr = wiki.FindEngineBinary(cfg)
+            if findErr == nil {
+                detected = true
+                break
+            }
+        }
+        if !detected {
+            fmt.Fprintf(os.Stderr, "Error: no supported AI engine found\n")
+            os.Exit(1)
+        }
+        fmt.Printf("Auto-detected engine: %s (%s)\n\n", cfg.Engine, binPath)
     }
+
+    // Save updated config
+    config.Save(gitRoot, cfg)
+}
+```
+
+**Engine Auto-Detection Logic**:
+1. If `--engine` flag is provided, use it explicitly (fail if not found)
+2. If `--engine-path` is provided, use that path (fail if not found)
+3. Otherwise, try engines in order defined by `EngineDetectOrder`:
+   - `claude-code` (most commonly available)
+   - `qoder`
+   - `codex`
+4. Use the first successfully detected engine
+5. Fail if no supported engine is found
 
     // Save updated config
     config.Save(gitRoot, cfg)

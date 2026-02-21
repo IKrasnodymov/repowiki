@@ -106,7 +106,7 @@ func Default() *Config {
 }
 ```
 
-Note: Engine constants (`EngineQoder`, `EngineClaudeCode`, `EngineCodex`) are defined for type safety and validation.
+Note: Engine constants (`EngineQoder`, `EngineClaudeCode`, `EngineCodex`) are defined for type safety and validation. The `EngineDetectOrder` slice defines the priority order for engine auto-detection: `claude-code` → `qoder` → `codex`.
 
 ### Path Helpers
 

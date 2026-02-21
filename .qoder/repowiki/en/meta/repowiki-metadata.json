@@ -38,9 +38,9 @@
     {
       "id": "e3b6c9f2a5d8e1b4c7f0a3d6e9b2c5f8",
       "path": "cmd/repowiki/enable.go",
-      "line_range": "1-131",
+      "line_range": "1-154",
       "gmt_create": "2026-02-19T16:26:00Z",
-      "gmt_modified": "2026-02-19T20:05:00Z"
+      "gmt_modified": "2026-02-21T00:00:00Z"
     },
     {
       "id": "f1a4d7e0b3c6f9a2d5e8b1c4f7a0d3e6",
@@ -87,9 +87,9 @@
     {
       "id": "c0f3a6d9e2b5c8f1a4e7d0a3f6c9b2e5",
       "path": "internal/config/config.go",
-      "line_range": "1-119",
+      "line_range": "1-123",
       "gmt_create": "2026-02-19T16:26:00Z",
-      "gmt_modified": "2026-02-19T20:05:00Z"
+      "gmt_modified": "2026-02-21T00:00:00Z"
     },
     {
       "id": "f8c1b4e7a0d3f6c9e2b5a8d1f4c7e0a3",
